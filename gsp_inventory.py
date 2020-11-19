@@ -6,7 +6,7 @@ GSP Excel to CSV
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.1
+@version: 1.2
 
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
@@ -22,11 +22,11 @@ HELP_MESSAGE = '''Usage:
 Parameters/Options:
     -h  | --help            : View usage help and examples
     -i  | --input           : Path to the input file
-        |                       - Linux: Defaults to $HOME/Downloads
-        |                       - Windows: Defaults to %USERPROFILE%\\downloads
+        |                       - Linux: Defaults to the file in $HOME/Downloads
+        |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads
     -o  | --output          : Path to the output file
-        |                       - Linux: Defaults to $HOME/Downloads
-        |                       - Windows: Defaults to %USERPROFILE%\\downloads        
+        |                       - Linux: Defaults to the file in $HOME/Downloads
+        |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads        
     -d  | --delimter        : Single character to be used as delimiter for the tsv (default='\\t' (tab space))
     -p  | --preserve        : Do not delete original file if declared
     -v  | --verbose         : Show outputs in terminal as well as log file
@@ -100,6 +100,13 @@ def main(argv):
     # Parse arguments
     inputFilePath, outputFilePath, delimiter, preserveOldFiles, verbose = parseArgs(argv)
     LOGGER.writeLog("Args parsed...", localFrame.f_lineno)
+    LOGGER.writeLog("Input file path: {}".format(inputFilePath), localFrame.f_lineno)
+    LOGGER.writeLog("Output file path: {}".format(outputFilePath), localFrame.f_lineno)
+    LOGGER.writeLog("Using delimiter: {}".format("[TAB SPACE]" if delimiter == '\t' else delimiter),
+                    localFrame.f_lineno)
+    LOGGER.writeLog("Preserve input file: {}".format("NO" if not preserveOldFiles else "YES"), localFrame.f_lineno)
+    LOGGER.writeLog("Verbose: {}".format("ON" if not verbose else "OFF"), localFrame.f_lineno)
+    LOGGER.writeLog("===============================================", localFrame.f_lineno)
 
     # Read file
     data = pd.read_excel(inputFilePath)
@@ -112,16 +119,18 @@ def main(argv):
 
     # Convert quantity in hand to integer
     data['QuantityOnHand'] = data['QuantityOnHand'].astype(int)
-    LOGGER.writeLog("Data processed...", localFrame.f_lineno)
+    LOGGER.writeLog("Data processed.", localFrame.f_lineno)
 
     # Save file as tsv
     # print (data)
     data.to_csv(outputFilePath, sep='\t', index=False)
-    LOGGER.writeLog("File saved as .tsv ...", localFrame.f_lineno)
+    LOGGER.writeLog("File saved as .tsv at path: {}".format(inputFilePath), localFrame.f_lineno)
 
     # Time to remove the original file (If preserve is declared as a command line flag)
-    if preserveOldFiles:
+    if not preserveOldFiles:
         os.remove(inputFilePath)
+        LOGGER.writeLog("Removed input file.", localFrame.f_lineno)
+    LOGGER.writeLog("Execution complete - exitting.", localFrame.f_lineno)
 
 
 def parseArgs(argv):
@@ -146,6 +155,7 @@ def parseArgs(argv):
     # Defining options in for command line arguments
     options = "hi:o:d:vp"
     long_options = ["help", "input=", "output=", 'delimiter=', 'verbose', 'preserve']
+    inputFileName = 'GSPInventoryFeed.xls'
 
     # Note about validating if file is opened or not
     #   - One of the files is an Excel 1997-compatiblity Mode xls which opens regardless of whether it is being used by
@@ -155,9 +165,9 @@ def parseArgs(argv):
 
     # This is the same for now. Maybe need to change separately for both OSes
     if PLATFORM == 'windows':
-        inputDefaultPath = os.path.join(os.path.expanduser('~'), 'Downloads', 'InventoryList.xls')
+        inputDefaultPath = os.path.join(os.path.expanduser('~'), 'Downloads', inputFileName)
     elif PLATFORM == 'linux':
-        inputDefaultPath = os.path.join(os.path.expanduser('~'), 'Downloads', 'InventoryList.xls')
+        inputDefaultPath = os.path.join(os.path.expanduser('~'), 'Downloads', inputFileName)
 
     # This is the same for now. Maybe need to change separately for both OSes
     if PLATFORM == 'windows':
@@ -168,7 +178,8 @@ def parseArgs(argv):
     # Arguments
     inputFilePath = inputDefaultPath
     outputFilePath = outputDefaultPath
-    delimiter = ','
+    defaultDilimiter = '\t'
+    delimiter = defaultDilimiter
     verbose = False
     preserveOldFiles = False
 
@@ -206,7 +217,7 @@ def parseArgs(argv):
                 outputFilePath = outputDefaultPath
         elif option in ("-d", "--delimiter"):
             delimiter = value
-            delimiter = validateDelimiter(delimiter)
+            delimiter = validateDelimiter(delimiter, defaultDilimiter)
         elif option in ("-p", "--preserve"):
             preserveOldFiles = True
         elif option in ("-v", "--verbose"):
@@ -218,7 +229,7 @@ def parseArgs(argv):
     return inputFilePath, outputFilePath, delimiter, preserveOldFiles, verbose
 
 
-def validateDelimiter(delimiter):
+def validateDelimiter(delimiter, defaultDilimiter):
     """
     Function that validates the delimiter option input by the user.
     Main issues to check for is length and make sure that the chosen delimiter is within a list of acceptable options.
@@ -244,7 +255,7 @@ def validateDelimiter(delimiter):
     if delimiter not in acceptableDelimiters:
         LOGGER.writeLog("Delimiter was not selected from acceptable options, switching to ',' default delimiter.",
                         localFrame.f_lineno, severity='warning')
-        delimiter = ','
+        delimiter = defaultDilimiter
         return delimiter
 
     return delimiter
