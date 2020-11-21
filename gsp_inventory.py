@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
-'''
+"""
 GSP Excel to CSV
 
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.2
+@version: 1.3
 
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
     - Portable to run in linux or windows
 TODO: All after this
-'''
+"""
 
 HELP_MESSAGE = '''Usage:
     The script is capable of running without any argument provided. All behavorial variables will be reset to default.
@@ -26,7 +26,7 @@ Parameters/Options:
         |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads
     -o  | --output          : Path to the output file
         |                       - Linux: Defaults to the file in $HOME/Downloads
-        |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads        
+        |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads
     -d  | --delimter        : Single character to be used as delimiter for the tsv (default='\\t' (tab space))
     -p  | --preserve        : Do not delete original file if declared
     -v  | --verbose         : Show outputs in terminal as well as log file
@@ -34,14 +34,14 @@ Parameters/Options:
 Example:
     $ python3 suredone_download.py
 
-    $ python3 suredone_download.py -f [config.yaml]
-    $ python3 suredone_download.py -file [config.yaml]
+    $ python3 suredone_download.py -f [GSPInventoryFeed.xlsx]
+    $ python3 suredone_download.py -file [GSPInventoryFeed.xlsx]
 
-    $ python3 suredone_download.py -f [config.yaml] -o [output.csv]
-    $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv]
+    $ python3 suredone_download.py -f [GSPInventoryFeed.xlsx] -o [gsp_inventory.tsv]
+    $ python3 suredone_download.py -file [GSPInventoryFeed.xlsx] --output_file [gsp_inventory.tsv]
 
-    $ python3 suredone_download.py -f [config.yaml] -o [output.csv] -v -p
-    $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv] --verbose --preserve
+    $ python3 suredone_download.py -f [GSPInventoryFeed.xlsx] -o [gsp_inventory.tsv] -v -p
+    $ python3 suredone_download.py -file [GSPInventoryFeed.xlsx] --output_file [gsp_inventory.tsv] --verbose --preserve
 '''
 # Need python version 3.4 or higher for pathlib
 from pathlib import Path
@@ -105,7 +105,7 @@ def main(argv):
     LOGGER.writeLog("Using delimiter: {}".format("[TAB SPACE]" if delimiter == '\t' else delimiter),
                     localFrame.f_lineno)
     LOGGER.writeLog("Preserve input file: {}".format("NO" if not preserveOldFiles else "YES"), localFrame.f_lineno)
-    LOGGER.writeLog("Verbose: {}".format("ON" if not verbose else "OFF"), localFrame.f_lineno)
+    LOGGER.writeLog("Verbose: {}".format("OFF" if not verbose else "ON"), localFrame.f_lineno)
     LOGGER.writeLog("===============================================", localFrame.f_lineno)
 
     # Read file
@@ -155,7 +155,7 @@ def parseArgs(argv):
     # Defining options in for command line arguments
     options = "hi:o:d:vp"
     long_options = ["help", "input=", "output=", 'delimiter=', 'verbose', 'preserve']
-    inputFileName = 'GSPInventoryFeed.xls'
+    inputFileName = 'GSPInventoryFeed.xlsx'
 
     # Note about validating if file is opened or not
     #   - One of the files is an Excel 1997-compatiblity Mode xls which opens regardless of whether it is being used by
