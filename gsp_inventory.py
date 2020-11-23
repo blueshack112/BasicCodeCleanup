@@ -6,7 +6,7 @@ GSP Excel to CSV
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.3
+@version: 1.4
 
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
@@ -155,7 +155,8 @@ def parseArgs(argv):
     # Defining options in for command line arguments
     options = "hi:o:d:vp"
     long_options = ["help", "input=", "output=", 'delimiter=', 'verbose', 'preserve']
-    inputFileName = 'GSPInventoryFeed.xlsx'
+    inputFileExtension = '.xls'
+    inputFileName = 'GSPInventoryFeed' + inputFileExtension
 
     # Note about validating if file is opened or not
     #   - One of the files is an Excel 1997-compatiblity Mode xls which opens regardless of whether it is being used by
@@ -200,21 +201,8 @@ def parseArgs(argv):
             sys.exit()
         elif option in ("-i", "--input"):
             inputFilePath = value
-            if not os.path.exists(inputFilePath) or os.path.isdir(inputFilePath) or not inputFilePath.endswith(
-                    '.xls'):
-                LOGGER.writeLog(
-                    """Invalid file path. Check if it exists, is not a directory and has '.xls' extension.
-                     \rReverting to defaults.""",
-                    localFrame.f_lineno, severity='warning', data={'code': 1})
-                inputFilePath = inputDefaultPath
         elif option in ("-o", "--output"):
             outputFilePath = value
-            if not os.path.exists(os.path.dirname(outputFilePath)) or os.path.isdir(outputFilePath):
-                LOGGER.writeLog(
-                    """Invalid output file path. Check if it exists and is not a directory.
-                     \rReverting to defaults.""",
-                    localFrame.f_lineno, severity='warning', data={'code': 1})
-                outputFilePath = outputDefaultPath
         elif option in ("-d", "--delimiter"):
             delimiter = value
             delimiter = validateDelimiter(delimiter, defaultDilimiter)
@@ -225,6 +213,23 @@ def parseArgs(argv):
 
     # Updating logger's behavior based on verbose
     LOGGER.verbose = verbose
+
+    # Validate input file path
+    if not os.path.exists(inputFilePath) or os.path.isdir(inputFilePath) or not inputFilePath.endswith(
+            inputFileExtension):
+        LOGGER.writeLog(
+            """Invalid file path. Check if it exists, is not a directory and has {} extension. Exiting.""".format(
+                inputFileExtension),
+            localFrame.f_lineno, severity='code-breaker', data={'code': 1})
+        exit()
+
+    # Validate output file directory path
+    if not os.path.exists(os.path.dirname(outputFilePath)) or os.path.isdir(outputFilePath):
+        LOGGER.writeLog(
+            """Invalid output file path. Check if it exists and is not a directory.
+             \rReverting to defaults.""",
+            localFrame.f_lineno, severity='warning', data={'code': 1})
+        outputFilePath = outputDefaultPath
 
     return inputFilePath, outputFilePath, delimiter, preserveOldFiles, verbose
 
