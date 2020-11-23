@@ -899,7 +899,6 @@ class SureDone:
                 time.sleep(10)
                 continue
             break
-        # TODO: logxx
         temp = 'Error ' + str(errorCount) + ' ' + typ + ' ' + url + ' ' + data
         LOGGER.writeLog(temp, localFrame.f_lineno, severity='error')
         raise LoadingError
