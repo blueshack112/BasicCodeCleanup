@@ -316,7 +316,7 @@ class Logger(object):
         """
         # Define the file name for logging
         temp = datetime.now().strftime('%Y_%m_%d-%H-%M-%S')
-        logFileName = "suredone_download_" + temp + ".log"
+        logFileName = "gsp_inventory_xlsx2tsv_" + temp + ".log"
 
         # If the platform is windows, set the log file path to the current user's Downloads/log folder
         if sys.platform == 'win32' or sys.platform == 'win64':  # Windows
