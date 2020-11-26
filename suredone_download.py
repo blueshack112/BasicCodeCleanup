@@ -138,6 +138,8 @@ import inspect
 import traceback
 from os.path import expanduser
 from datetime import datetime
+# TODO: The change needed for the api call is done. Now just add the command line arugment for custom selection
+#   of fields where the default will be the five fields that are needed by Patrick.
 
 currentMilliTime = lambda: int(round(time.time() * 1000))
 
@@ -180,7 +182,7 @@ def main(argv):
     data = getDataForExports()
 
     # Invoke the GET API call to bulk/exports sub module
-    exportRequestResponse = sureDone.apicall('get', 'bulk/exports', data)
+    exportRequestResponse = sureDone.apicall('get', 'bulk/exports{}'.format(data))
 
     LOGGER.writeLog("API response recieved.", localFrame.f_lineno, severity='normal')
 
@@ -300,7 +302,7 @@ def getDefaultDownloadPath(preserve):
         downloadPath = os.path.join(downloadPath, 'downloads')
         if os.path.exists(downloadPath):
             if not preserve:
-                purge(downloadPath, 'SureDone_')
+                purge(downloadPath, 'SureDone_Downloads_')
                 LOGGER.writeLog("Purged existing files.", localFrame.f_lineno, severity='normal')
         else:  # Create the downloads directory
             os.mkdir(downloadPath)
@@ -340,6 +342,12 @@ def getDataForExports():
 
     # Rejoin the fields into a single string, separated by a ','
     data['fields'] = ','.join(field_list)
+
+    # Compule the string to be added in the url
+    dataStr = '?'
+    dataStr += 'type={}&mode={}&fields={}'.format(data['type'], data['mode'], data['fields'])
+
+    return dataStr
 
 
 def downloadExportedFile(fileName, downloadFilePath, sureDone, delimiter=','):
