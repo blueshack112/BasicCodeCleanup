@@ -6,7 +6,7 @@ GSP Excel to CSV
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.4
+@version: 1.5
 
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
