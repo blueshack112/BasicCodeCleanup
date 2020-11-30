@@ -11,7 +11,6 @@ GSP Excel to CSV
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
     - Portable to run in linux or windows
-TODO: All after this
 """
 
 HELP_MESSAGE = '''Usage:
@@ -122,8 +121,16 @@ def main(argv):
     LOGGER.writeLog("Data processed.", localFrame.f_lineno)
 
     # Save file as tsv
-    # print (data)
-    data.to_csv(outputFilePath, sep='\t', index=False)
+    columnList = [
+        'Site',
+        'ItemNumber',
+        'QuantityOnHand'
+    ]
+    # TODO: Add the logic where when the delimiter is tab, then extension is tsv and when the delimiter is comma, the
+    #   extension is tsv, else txt.
+    data.to_csv(outputFilePath, encoding='utf-8', escapechar='\\', float_format='%.2f', index=False, columns=columnList,
+                line_terminator='\r\n', quoting=csv.QUOTE_NONE, sep=delimiter)
+
     LOGGER.writeLog("File saved as .tsv at path: {}".format(inputFilePath), localFrame.f_lineno)
 
     # Time to remove the original file (If preserve is declared as a command line flag)
@@ -143,8 +150,7 @@ def parseArgs(argv):
         inputPath: str: path to the directory where input file is present
             - Linux: Defaults to $HOME/Downloads in
             - Windows: Defaults to %USERPROFILE%\\downloads\\
-<br>    delimiter: str: Single character to be used as delimiter for the tsv (default=',')
-        #TODO: Since its a tsv, maybe tab as delimiter?
+<br>    delimiter: str: Single character to be used as delimiter for the tsv (default='\t')
 <br>    outputPath: str: Output directory where output file is to be stored
             - Linux: Defaults to $HOME/Downloads in
             - Windows: Defaults to %USERPROFILE%\downloads\
@@ -239,6 +245,7 @@ def validateDelimiter(delimiter, defaultDilimiter):
     Function that validates the delimiter option input by the user.
     Main issues to check for is length and make sure that the chosen delimiter is within a list of acceptable options.
     :param delimiter: str: The user-specified delimiter option
+    :param defaultDilimiter: str: The user-specified delimiter option
     :return:
 <br>    delimiter : str: The same delimiter if validated and a ',' as a delimiter if not validated.
     """
