@@ -5,7 +5,7 @@ Suredone Download
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.1
+@version: 1.3
 This module is created to use the Suredone API to create a custom CSV of store's 
 product and sales records, and get it downloaded
 The script currently intends to download has the following columns:
@@ -58,36 +58,6 @@ The script currently intends to download has the following columns:
     - walmartstatus
     - walmarturl
     - total_stock
-    
-Usage:
-    The script is capable of running without any argument provided. All behavorial
-    variables will be reset to default.
-    
-    $ python3 suredone_download.py [options]
-Parameters/Options:
-    -h  | --help            : View usage help and examples
-    -d  | --delimter        : Delimiter to be used as the separator in the CSV file saved by the script
-        |                       - Default is comma ','.
-    -f  | --file            : Path to the configuration file containing API keys
-        |                       - Default in %APPDATA%/local/suredone.yaml on Window
-        |                       - Default in $HOME/suredone.yaml
-    -o  | --output          : Path for the output file to be downloaded at
-        |                       - Default in %USERPROFILE%/Downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
-        |                       - Default in $HOME/downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
-    -p  | --preserve        : Do not delete older files that start with 'SureDone_' in the download directory
-        |                       - This funciton is limited to default download locations only.
-        |                       - Defining custom output path will render this feature useless.
-    -v  | --verbose         : Show outputs in terminal as well as log file
-    -w  | --wait            : Custom timeout for requests invoked by the script (specified in seconds)
-        |                       - Default: 15 seconds
-Example:
-    $ python3 suredone_download.py
-    $ python3 suredone_download.py -f [config.yaml]
-    $ python3 suredone_download.py -file [config.yaml]
-    $ python3 suredone_download.py -f [config.yaml] -o [output.csv]
-    $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv]
-    $ python3 suredone_download.py -f [config.yaml] -o [output.csv] -v -p
-    $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv] --verbose --preserve
 """
 
 # Help message
@@ -101,9 +71,15 @@ Parameters/Options:
     -h  | --help            : View usage help and examples
     -d  | --delimter        : Delimiter to be used as the separator in the CSV file saved by the script
         |                       - Default is comma ','.
+        |                       - Changing delimniter will also change file extension.
+        |                           - ['],] for .csv
+        |                           - [TAB SPACE] for .tsv
+        |                           - All others for .txt
     -f  | --file            : Path to the configuration file containing API keys
         |                       - Default in %APPDATA%/local/suredone.yaml on Window
         |                       - Default in $HOME/suredone.yaml
+    -c  | --fields          : Comma separated string containing fields to export
+        |                       - Default: "guid,stock,price,msrp,cost,ebayid"
     -o  | --output          : Path for the output file to be downloaded at
         |                       - Default in %USERPROFILE%/Downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
         |                       - Default in $HOME/downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
@@ -121,6 +97,9 @@ Example:
     $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv]
     $ python3 suredone_download.py -f [config.yaml] -o [output.csv] -v -p
     $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv] --verbose --preserve
+    $ python3 suredone_download.py -f [config.yaml] -o [output.csv] -v -p -c guid,stock,price
+    $ python3 suredone_download.py -file [config.yaml] --output_file [output.csv] --verbose --preserve \\
+        --fields guid,stock,price
 """
 
 # Imports
@@ -138,8 +117,6 @@ import inspect
 import traceback
 from os.path import expanduser
 from datetime import datetime
-# TODO: The change needed for the api call is done. Now just add the command line arugment for custom selection
-#   of fields where the default will be the five fields that are needed by Patrick.
 
 currentMilliTime = lambda: int(round(time.time() * 1000))
 
@@ -155,7 +132,8 @@ def main(argv):
 
     # Parse arguments
     # When verbose argument is added, change the verbose of the logger based on the argument as well
-    waitTime, configPath, delimiter, outputFilePath, preserveOldFiles, verbose = parseArgs(argv)
+    waitTime, configPath, delimiter, outputFilePath, preserveOldFiles, verbose, dataFields, \
+    outputFileExtension = parseArgs(argv)
 
     # Check if python version is 3.5 or higher
     if not PYTHON_VERSION >= 3.5:
@@ -163,10 +141,14 @@ def main(argv):
                         data={'code': 1})
         exit()
 
-    LOGGER.writeLog("SureDone bulk downloader initalized.", localFrame.f_lineno, severity='normal')
+    LOGGER.writeLog("SureDone bulk downloader initalized.\n", localFrame.f_lineno, severity='normal')
+
     LOGGER.writeLog("Wait time: {} seconds.".format(waitTime), localFrame.f_lineno, severity='normal')
     LOGGER.writeLog("Configurations path: {}.".format(configPath), localFrame.f_lineno, severity='normal')
-    LOGGER.writeLog("Delimiter: {}.".format(delimiter), localFrame.f_lineno, severity='normal')
+    LOGGER.writeLog("Fields: {}.".format(dataFields), localFrame.f_lineno, severity='normal')
+    LOGGER.writeLog("Delimiter: {}.".format(delimiter if delimiter != '\t' else '[TAB SPACE]'), localFrame.f_lineno,
+                    severity='normal')
+    LOGGER.writeLog("Output File Extension: {}.".format(outputFileExtension), localFrame.f_lineno, severity='normal')
     LOGGER.writeLog("Preserve old files: {}.".format(preserveOldFiles), localFrame.f_lineno, severity='normal')
     LOGGER.writeLog("Verbose: {}.\n".format(verbose), localFrame.f_lineno, severity='normal')
 
@@ -179,7 +161,7 @@ def main(argv):
     sureDone = SureDone(user, apiToken, waitTime)
 
     # Get data to send to the bulk/exports sub module
-    data = getDataForExports()
+    data = getDataForExports(dataFields)
 
     # Invoke the GET API call to bulk/exports sub module
     exportRequestResponse = sureDone.apicall('get', 'bulk/exports{}'.format(data))
@@ -235,11 +217,12 @@ def safeExit(downloadPath, marker=''):
 
 def loadConfig(configPath):
     """
-    Function that parses the configuration file and reads user and apiToken variables
+    Function that parses the configuration file and reads user and apiToken variables.
+
     Parameters
     ----------
         - configPath : str
-            Path to the configuration file
+            
     
     Returns
     -------
@@ -269,7 +252,7 @@ def loadConfig(configPath):
     return user, apiToken
 
 
-def getDefaultDownloadPath(preserve):
+def getDefaultDownloadPath(preserve, extension):
     """
     Function to check the operating system and determine the appropriate 
     download path for the export file based on operating system.
@@ -283,7 +266,7 @@ def getDefaultDownloadPath(preserve):
     localFrame = inspect.currentframe()
     # Generate file name
     suffix = datetime.now().strftime('%Y_%m_%d-%H-%M-%S')
-    fileName = 'SureDone_Downloads_' + suffix + '.csv'
+    fileName = 'SureDone_Downloads_' + suffix + extension
 
     # If the platform is windows, set the download path to the current user's Downloads folder
     if sys.platform == 'win32' or sys.platform == 'win64':  # Windows
@@ -311,22 +294,31 @@ def getDefaultDownloadPath(preserve):
         return downloadPath
 
 
-def getDataForExports():
+def getDataForExports(fields):
     """
     Function that prepares the data that will be sent to the bulk/exports sub module.
-    
-    Returns
-    -------
-        - data : dict
-            Dictionary that contains all the necessary key-value pairs that need to be sent to the Suredone API's bulk/exports sub module.
+
+    :param fields: str: Comma-separated string of fields to be called
+    :return: String contains all the necessary key-value pairs that need to be sent to the Suredone API's
+    bulk/exports sub module.
     """
     # Prepare to send api call. Create the SureDone object and create the data dict
     data = {}
     data['type'] = 'items'
     data['mode'] = 'include'
-    # data['fields'] = 'guid,stock,price, msrp,cost,title,condition,brand,media1,weight,fitmentfootnotes, manufacturerpartnumber, otherpartnumber,chaincablepattern, compatibletiresizes,caution, howmanywheelsdoesthisdo,howmanytiresdoesthiscover,ebayid,ebaypaymentprofileid,ebayreturnprofileid,ebayshippingprofileid'
-    ### data['fields'] ='guid,stock,price,msrp,cost,title,longdescription,condition,brand,upc,media1,weight,datesold,totalsold,manufacturerpartnumber,warranty,mpn,ebayid,ebaysku,ebaycatid,ebaystoreid,ebayprice,ebaytitle,ebaystarttime,ebayendtime,ebaysiteid,ebaysubtitle,ebaypaymentprofileid,ebayreturnprofileid,ebayshippingprofileid,ebaybestofferenabled,ebaybestofferminimumprice,ebaybestofferautoacceptprice,ebaybuyitnow,ebayupcnot,ebayskip,amznsku,amznasin,amznprice,amznskip,walmartskip,walmartprice,walmartcategory,walmartdescription,walmartislisted,walmartinprogress,walmartstatus,walmarturl,total_stock'
-    data['fields'] = 'guid,stock,price,msrp,cost,ebayid'
+    # data['fields'] = 'guid,stock,price, msrp,cost,title,condition,brand,media1,weight,fitmentfootnotes,
+    #   manufacturerpartnumber, otherpartnumber,chaincablepattern, compatibletiresizes,caution,
+    #   howmanywheelsdoesthisdo,howmanytiresdoesthiscover,ebayid,ebaypaymentprofileid,ebayreturnprofileid,
+    #   ebayshippingprofileid'
+
+    # data['fields'] ='guid,stock,price,msrp,cost,title,longdescription,condition,brand,upc,media1,weight,datesold,
+    #   totalsold,manufacturerpartnumber,warranty,mpn,ebayid,ebaysku,ebaycatid,ebaystoreid,ebayprice,ebaytitle,
+    #   ebaystarttime,ebayendtime,ebaysiteid,ebaysubtitle,ebaypaymentprofileid,ebayreturnprofileid,
+    #   ebayshippingprofileid,ebaybestofferenabled,ebaybestofferminimumprice,ebaybestofferautoacceptprice,
+    #   ebaybuyitnow,ebayupcnot,ebayskip,amznsku,amznasin,amznprice,amznskip,walmartskip,walmartprice,
+    #   walmartcategory,walmartdescription,walmartislisted,walmartinprogress,walmartstatus,walmarturl,total_stock'
+
+    data['fields'] = fields
     # Split the data fields based on ',' and they strip each field of any spaces
     t = list(map(lambda x: x.strip(' '), data['fields'].split(',')))
     seen = set()
@@ -385,7 +377,7 @@ def downloadExportedFile(fileName, downloadFilePath, sureDone, delimiter=','):
             # Re open the saved csv and save it back with the desired delimiter
             # As long as the delimiter desired is not ',' becasue the default way of delimiting the csv is via ','
             if delimiter != ',':
-                temp = pd.read_csv(downloadFilePath, index_col='id')
+                temp = pd.read_csv(downloadFilePath)
                 temp.to_csv(downloadFilePath, sep=delimiter)
 
             LOGGER.writeLog("Saved to " + downloadFilePath, localFrame.f_lineno, severity='normal')
@@ -432,8 +424,8 @@ def parseArgs(argv):
             A boolean variable that will tell the script to keep or remove older downloaded files in the download path
     """
     # Defining options in for command line arguments
-    options = "hw:f:d:o:vp"
-    long_options = ["help", "wait=", "file=", 'delimiter=', 'output=', 'verbose', 'preserve']
+    options = "hw:f:d:o:vpc:"
+    long_options = ["help", "wait=", "file=", 'delimiter=', 'output=', 'verbose', 'preserve', 'fields=']
 
     # Arguments
     waitTime = 15
@@ -444,8 +436,21 @@ def parseArgs(argv):
     customOutputPathFoundAndValidated = False
     verbose = False
     preserveOldFiles = False
+    defaultOutputFileExtension = '.txt'
+    outputFileExtension = defaultOutputFileExtension
+    defaultFieldsBrief = 'guid,stock,price,msrp,cost,ebayid'
+    defaultFieldsDetailed = 'guid,stock,price,msrp,cost,title,longdescription,condition,brand,upc,media1,weight,' \
+                            'datesold,totalsold,manufacturerpartnumber,warranty,mpn,ebayid,ebaysku,ebaycatid,' \
+                            'ebaystoreid,ebayprice,ebaytitle,ebaystarttime,ebayendtime,ebaysiteid,ebaysubtitle,' \
+                            'ebaypaymentprofileid,ebayreturnprofileid,ebayshippingprofileid,ebaybestofferenabled,' \
+                            'ebaybestofferminimumprice,ebaybestofferautoacceptprice,ebaybuyitnow,ebayupcnot,ebayskip,' \
+                            'amznsku,amznasin,amznprice,amznskip,walmartskip,walmartprice,walmartcategory,' \
+                            'walmartdescription,walmartislisted,walmartinprogress,walmartstatus,walmarturl,total_stock'
+
+    dataFields = defaultFieldsDetailed
 
     # Extracting arguments
+    opts = None
     try:
         opts, args = getopt.getopt(argv, options, long_options)
     except getopt.GetoptError:
@@ -477,14 +482,50 @@ def parseArgs(argv):
             verbose = True
             # Updating logger's behavior based on verbose
             LOGGER.verbose = verbose
+        elif option in ("-c", "--fields"):
+            dataFields = validateFields(value, defaultFieldsDetailed)
+
+    # Determine the output file extension based on the delimiter chosen
+    if delimiter == '\t':
+        outputFileExtension = '.tsv'
+    elif delimiter == ',':
+        outputFileExtension = '.csv'
 
     # If custom path to config file wasn't found, search in default locations
     if not customConfigPathFoundAndValidated:
         configPath = getDefaultConfigPath()
     if not customOutputPathFoundAndValidated:
-        outputFilePath = getDefaultDownloadPath(preserve=preserveOldFiles)
+        outputFilePath = getDefaultDownloadPath(preserve=preserveOldFiles, extension=outputFileExtension)
 
-    return waitTime, configPath, delimiter, outputFilePath, preserveOldFiles, verbose
+    return waitTime, configPath, delimiter, outputFilePath, preserveOldFiles, verbose, dataFields, outputFileExtension
+
+
+def validateFields(inputString, defaultFields):
+    """
+    Function to check if the fields String is properly formatted (each word separated by a comma) with no
+    special characters involved.
+
+    :param inputString: str: String inputted in commandline
+    :param defaultFields: str: Default fields decided
+    :return: Same input string if successfully validated else the default fields.
+    """
+    localFrame = inspect.currentframe()
+
+    fieldsList = inputString.split(',')
+
+    for field in fieldsList:
+        # Check if this field contains an alphabet
+        if not re.search('[a-zA-Z]', field):
+            LOGGER.writeLog("Error found in [{}] field. Reverting to defaults.", localFrame.f_lineno,
+                            severity='warning')
+            return defaultFields
+
+        # Check that it only contains alphanumeric characters
+        if not re.match('[a-zA-Z0-9_]', field):
+            LOGGER.writeLog("Error found in [{}] field. Reverting to defaults.", localFrame.f_lineno,
+                            severity='warning')
+            return defaultFields
+    return inputString
 
 
 def validateDownloadPath(path):
@@ -535,7 +576,7 @@ def validateDelimiter(delimiter):
         return delimiter
 
     # Check that it's within acceptable options
-    acceptableDelimiters = [',', '\t', ':', '|', ' ']
+    acceptableDelimiters = [',', '\t', ':', ';', '|', ' ']
 
     if delimiter not in acceptableDelimiters:
         LOGGER.writeLog("Delimiter was not selected from acceptable options, switching to ',' default delimiter.",
@@ -825,6 +866,7 @@ class SureDone:
             # 3 or more errors break the loop
             if errorCount >= 3:
                 break
+            resp = None
             try:
                 # Invoke the corresponding api call based on the type
                 if typ == 'get':
@@ -902,7 +944,8 @@ class SureDone:
             #     continue
             else:
                 errorCount += 1
-                temp = 'Error' + ' ' + errorCount + ' ' + resp.status_code + ' ' + typ + ' ' + url + ' ' + data + '\n' + resp.text
+                temp = 'Error' + ' ' + str(errorCount) + ' ' + str(
+                    resp.status_code) + ' ' + typ + ' ' + url + ' ' + data + '\n' + resp.text
                 LOGGER.writeLog(temp, localFrame.f_lineno, severity='error')
                 time.sleep(10)
                 continue
@@ -912,7 +955,7 @@ class SureDone:
         raise LoadingError
 
 
-def purge(dir, pattern, inclusive=True):
+def purge(directory, pattern, inclusive=True):
     """
     A simple function to remove everything within a directory and it's subdirectories if the file name mathces a specific pattern.
     Parameters
@@ -931,11 +974,11 @@ def purge(dir, pattern, inclusive=True):
     """
     count = 0
     regexObj = re.compile(pattern)
-    for root, dirs, files in os.walk(dir, topdown=False):
+    for root, dirs, files in os.walk(directory, topdown=False):
         for name in files:
             path = os.path.join(root, name)
             if bool(regexObj.search(path)) == bool(inclusive):
-                if path.endswith('.csv'):
+                if path.endswith('.csv') or path.endswith('.tsv') or path.endswith('.txt'):
                     os.remove(path)
                     count += 1
     return count
