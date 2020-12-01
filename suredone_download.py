@@ -270,11 +270,13 @@ def getDefaultDownloadPath(preserve, extension):
     fileName = 'SureDone_Download_' + suffix + extension
 
     # If the platform is windows, set the download path to the current user's Downloads folder
+    toPurge = ['SureDone_Download_', 'suredone_inventory']
     if sys.platform == 'win32' or sys.platform == 'win64':  # Windows
         downloadPath = os.path.expandvars(r'%USERPROFILE%')
         downloadPath = os.path.join(downloadPath, 'Downloads')
         if not preserve:
-            purge(downloadPath, 'SureDone_')
+            for purgePattern in toPurge:
+                purge(downloadPath, purgePattern)
             LOGGER.writeLog("Purged existing files.", localFrame.f_lineno, severity='normal')
 
         downloadPath = os.path.join(downloadPath, fileName)
@@ -286,7 +288,8 @@ def getDefaultDownloadPath(preserve, extension):
         downloadPath = os.path.join(downloadPath, 'downloads')
         if os.path.exists(downloadPath):
             if not preserve:
-                purge(downloadPath, 'SureDone_Download_')
+                for purgePattern in toPurge:
+                    purge(downloadPath, purgePattern)
                 LOGGER.writeLog("Purged existing files.", localFrame.f_lineno, severity='normal')
         else:  # Create the downloads directory
             os.mkdir(downloadPath)
