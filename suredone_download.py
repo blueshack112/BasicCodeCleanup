@@ -117,6 +117,7 @@ import inspect
 import traceback
 from os.path import expanduser
 from datetime import datetime
+import csv
 
 currentMilliTime = lambda: int(round(time.time() * 1000))
 
@@ -378,9 +379,16 @@ def downloadExportedFile(fileName, downloadFilePath, sureDone, delimiter=','):
             # As long as the delimiter desired is not ',' becasue the default way of delimiting the csv is via ','
             if delimiter != ',':
                 temp = pd.read_csv(downloadFilePath)
-                temp.to_csv(downloadFilePath, sep=delimiter)
-
+                temp.to_csv(downloadFilePath, sep=delimiter, index=False)
             LOGGER.writeLog("Saved to " + downloadFilePath, localFrame.f_lineno, severity='normal')
+
+            # Also convert the file to a tab-separated file and save as suredone_inventory.tsv
+            temp = pd.read_csv(downloadFilePath, sep=delimiter)
+            secondFilePath = os.path.join(os.path.dirname(downloadFilePath), 'suredone_inventory.tsv')
+            myList = list(temp.columns.values)
+            temp.to_csv(secondFilePath, sep='\t', encoding='utf-8', quoting=csv.QUOTE_NONE, float_format='%.2f',
+                        index=False, escapechar='\\', columns=myList)
+            LOGGER.writeLog("TSV saved to " + secondFilePath, localFrame.f_lineno, severity='normal')
             break
         else:
             # If the api call with the file name in the url wasn't successfull
