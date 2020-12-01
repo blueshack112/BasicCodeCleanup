@@ -266,7 +266,7 @@ def getDefaultDownloadPath(preserve, extension):
     localFrame = inspect.currentframe()
     # Generate file name
     suffix = datetime.now().strftime('%Y_%m_%d-%H-%M-%S')
-    fileName = 'SureDone_Downloads_' + suffix + extension
+    fileName = 'SureDone_Download_' + suffix + extension
 
     # If the platform is windows, set the download path to the current user's Downloads folder
     if sys.platform == 'win32' or sys.platform == 'win64':  # Windows
@@ -285,7 +285,7 @@ def getDefaultDownloadPath(preserve, extension):
         downloadPath = os.path.join(downloadPath, 'downloads')
         if os.path.exists(downloadPath):
             if not preserve:
-                purge(downloadPath, 'SureDone_Downloads_')
+                purge(downloadPath, 'SureDone_Download_')
                 LOGGER.writeLog("Purged existing files.", localFrame.f_lineno, severity='normal')
         else:  # Create the downloads directory
             os.mkdir(downloadPath)
@@ -390,7 +390,6 @@ def downloadExportedFile(fileName, downloadFilePath, sureDone, delimiter=','):
             if errorCount > 10:
                 LOGGER.writeLog("Can not download.", localFrame.f_lineno, severity='code-breaker',
                                 data={'code': 2, 'response': fileDownloadURLResponse})
-                # TODO: exit()
                 break
             else:
                 LOGGER.writeLog('Attempt ' + str(errorCount) + ' ' + str(fileDownloadURLResponse), localFrame.f_lineno,
@@ -897,7 +896,6 @@ class SureDone:
                     temp = 'JSONDecodeError Error ' + typ + ' ' + url + ' ' + data + "\n" + resp.text
                     LOGGER.writeLog(temp, localFrame.f_lineno, severity='error')
                     errorCount += 1
-                    # TODO: remove custom exceptions probably
                     raise LoadingError
 
                 # Return the JSON formatted data
@@ -930,7 +928,6 @@ class SureDone:
                     errorCount += 1
                     time.sleep(15)
                     continue
-            # ?? TODO: Find out more
             elif resp.status_code == 429:  # X-Rate-Limit-Time-Reset-Ms
                 time.sleep(40)
                 continue
