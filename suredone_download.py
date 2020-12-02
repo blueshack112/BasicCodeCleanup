@@ -5,7 +5,7 @@ Suredone Download
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.5
+@version: 1.6
 This module is created to use the Suredone API to create a custom CSV of store's 
 product and sales records, and get it downloaded
 The script currently intends to download has the following columns:
@@ -341,7 +341,8 @@ def getDataForExports(fields):
 
     # Compule the string to be added in the url
     dataStr = '?'
-    dataStr += 'type={}&mode={}&fields={}'.format(data['type'], data['mode'], data['fields'])
+    dataStr += 'type={}&mode={}&fields={}&export_name=suredone_download_py_export'.format(data['type'], data['mode'],
+                                                                                          data['fields'])
 
     return dataStr
 
