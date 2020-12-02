@@ -839,7 +839,7 @@ class SureDone:
         self.api_endpoint = 'https://api.suredone.com/v1/'
         self.headers = {}
         self.headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        self.headers['x-auth-integration'] = 'partnername'
+        self.headers['X-Auth-Integration'] = 'suredone_download_py'
         self.headers['x-auth-user'] = user
         self.headers['x-auth-token'] = api_token
 
