@@ -6,7 +6,7 @@ GSP Excel to CSV
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.5
+@version: 1.6
 
 This module is created to Convert GSP Excel Inventory Feed file to TSV
     - To be run in the same directory the data file is located
@@ -27,6 +27,10 @@ Parameters/Options:
         |                       - Linux: Defaults to the file in $HOME/Downloads
         |                       - Windows: Defaults to the file in %USERPROFILE%\\downloads
     -d  | --delimter        : Single character to be used as delimiter for the tsv (default='\\t' (tab space))
+        |                       - Changing delimiter will also change file extension.
+        |                           - ['],] for .csv
+        |                           - [TAB SPACE] for .tsv
+        |                           - All others for .txt
     -p  | --preserve        : Do not delete original file if declared
     -v  | --verbose         : Show outputs in terminal as well as log file
 
@@ -131,7 +135,7 @@ def main(argv):
     data.to_csv(outputFilePath, encoding='utf-8', escapechar='\\', float_format='%.2f', index=False, columns=columnList,
                 line_terminator='\r\n', quoting=csv.QUOTE_NONE, sep=delimiter)
 
-    LOGGER.writeLog("File saved as .tsv at path: {}".format(inputFilePath), localFrame.f_lineno)
+    LOGGER.writeLog("File saved as {} at path: {}".format(outputFilePath[-4:], outputFilePath), localFrame.f_lineno)
 
     # Time to remove the original file (If preserve is declared as a command line flag)
     if not preserveOldFiles:
@@ -161,7 +165,7 @@ def parseArgs(argv):
     # Defining options in for command line arguments
     options = "hi:o:d:vp"
     long_options = ["help", "input=", "output=", 'delimiter=', 'verbose', 'preserve']
-    inputFileExtension = '.xls'
+    inputFileExtension = '.xlsx'
     inputFileName = 'GSPInventoryFeed' + inputFileExtension
 
     # Note about validating if file is opened or not
@@ -230,12 +234,20 @@ def parseArgs(argv):
         exit()
 
     # Validate output file directory path
-    if not os.path.exists(os.path.dirname(outputFilePath)) or os.path.isdir(outputFilePath):
+    if not os.path.exists(os.path.dirname(outputFilePath)) or not os.path.isdir(outputFilePath):
         LOGGER.writeLog(
             """Invalid output file path. Check if it exists and is not a directory.
              \rReverting to defaults.""",
             localFrame.f_lineno, severity='warning', data={'code': 1})
         outputFilePath = outputDefaultPath
+
+    # Change output file's extension based on the delimiter
+    if delimiter == '\t':
+        outputFilePath = outputDefaultPath[0:-3] + 'tsv'
+    elif delimiter == ',':
+        outputFilePath = outputDefaultPath[0:-3] + 'csv'
+    else:
+        outputFilePath = outputDefaultPath[0:-3] + 'txt'
 
     return inputFilePath, outputFilePath, delimiter, preserveOldFiles, verbose
 
@@ -262,7 +274,7 @@ def validateDelimiter(delimiter, defaultDilimiter):
         return delimiter
 
     # Check that it's within acceptable options
-    acceptableDelimiters = [',', '\t', ':', '|', ' ']
+    acceptableDelimiters = [',', '\t', ':', '|', ' ', ';']
 
     if delimiter not in acceptableDelimiters:
         LOGGER.writeLog("Delimiter was not selected from acceptable options, switching to ',' default delimiter.",
