@@ -5,7 +5,7 @@ Suredone Download
 @contributor: Hassan Ahmed
 @contact: ahmed.hassan.112.ha@gmail.com
 @owner: Patrick Mahoney
-@version: 1.4
+@version: 1.5
 This module is created to use the Suredone API to create a custom CSV of store's 
 product and sales records, and get it downloaded
 The script currently intends to download has the following columns:
@@ -71,7 +71,7 @@ Parameters/Options:
     -h  | --help            : View usage help and examples
     -d  | --delimter        : Delimiter to be used as the separator in the CSV file saved by the script
         |                       - Default is comma ','.
-        |                       - Changing delimniter will also change file extension.
+        |                       - Changing delimiter will also change file extension.
         |                           - ['],] for .csv
         |                           - [TAB SPACE] for .tsv
         |                           - All others for .txt
