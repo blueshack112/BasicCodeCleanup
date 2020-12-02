@@ -81,8 +81,8 @@ Parameters/Options:
     -c  | --fields          : Comma separated string containing fields to export
         |                       - Default: "guid,stock,price,msrp,cost,ebayid"
     -o  | --output          : Path for the output file to be downloaded at
-        |                       - Default in %USERPROFILE%/Downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
-        |                       - Default in $HOME/downloads/SureDone_Downloads_yyyy_mm_dd-hh-mm-ss.csv
+        |                       - Default in %USERPROFILE%/Downloads/SureDone_Download_yyyy_mm_dd-hh-mm-ss.csv
+        |                       - Default in $HOME/downloads/SureDone_Download_yyyy_mm_dd-hh-mm-ss.csv
     -p  | --preserve        : Do not delete older files that start with 'SureDone_' in the download directory
         |                       - This funciton is limited to default download locations only.
         |                       - Defining custom output path will render this feature useless.
